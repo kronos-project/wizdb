@@ -127,3 +127,9 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Game files
+*.wad
+Root/
+types.json
+items.db
