@@ -4,6 +4,24 @@ from .state import State
 from .utils import convert_rarity, SCHOOLS
 
 ITEM_ADJECTIVES = (b"Hat", b"Robe", b"Shoes", b"Weapon", b"Athame", b"Amulet", b"Ring", b"Deck", b"Jewel", b"Mount")
+META_ADJECTIVES = (
+    b"PetJewel",
+    b"FLAG_NoAuction",
+    b"FLAG_CrownsOnly",
+    b"FLAG_NoGift",
+    b"FLAG_InstantEffect",
+    b"FLAG_NoCombat",
+    b"FLAG_NoDrops",
+    b"FLAG_NoDye",
+    b"FLAG_NoHatchmaking",
+    b"FLAG_NoPVP",
+    b"FLAG_NoSell",
+    b"FLAG_NoShatter",
+    b"FLAG_NoTrade",
+    b"FLAG_PVPOnly",
+    b"FLAG_ArenaPointsOnly",
+    b"FLAG_BlueArenaPointsOnly"
+)
 
 
 def is_item_template(obj: dict) -> bool:
@@ -31,38 +49,9 @@ class Item:
             if entry in adj:
                 self.adjectives |= (1 << idx)
 
-        if "PetJewel" in adj:
-            self.adjectives |= (1 << 16)
-        if "FLAG_NoAuction" in adj:
-            self.adjectives |= (1 << 17)
-        if "FLAG_CrownsOnly" in adj:
-            self.adjectives |= (1 << 18)
-        if "FLAG_NoGift" in adj:
-            self.adjectives |= (1 << 19)
-        if "FLAG_InstantEffect" in adj:
-            self.adjectives |= (1 << 20)
-        if "FLAG_NoCombat" in adj:
-            self.adjectives |= (1 << 21)
-        if "FLAG_NoDrops" in adj:
-            self.adjectives |= (1 << 22)
-        if "FLAG_NoDye" in adj:
-            self.adjectives |= (1 << 23)
-        if "FLAG_NoHatchmaking" in adj:
-            self.adjectives |= (1 << 24)
-        if "FLAG_NoPVP" in adj:
-            self.adjectives |= (1 << 25)
-        if "FLAG_NoSell" in adj:
-            self.adjectives |= (1 << 26)
-        if "FLAG_NoShatter" in adj:
-            self.adjectives |= (1 << 27)
-        if "FLAG_NoTrade" in adj:
-            self.adjectives |= (1 << 28)
-        if "FLAG_PVPOnly" in adj:
-            self.adjectives |= (1 << 29)
-        if "FLAG_ArenaPointsOnly" in adj:
-            self.adjectives |= (1 << 30)
-        if "FLAG_BlueArenaPointsOnly" in adj:
-            self.adjectives |= (1 << 31)
+        for idx, entry in enumerate(META_ADJECTIVES):
+            if entry in adj:
+                self.adjectives |= (1 << (16 + idx))
 
         self.min_pet_level = 0
         self.pet_talents = []
