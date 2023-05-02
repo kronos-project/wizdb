@@ -223,7 +223,7 @@ def insert_items(cursor, items):
             item.set_bonus_id,
             item.rarity,
             item.jewel_sockets.value,
-            item.adjectives & 0xFF,
+            item.adjectives & 0xFFFF,
             item.adjectives >> 16,
             *convert_equip_reqs(item.equip_reqs),
             item.min_pet_level,
