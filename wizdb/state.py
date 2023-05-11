@@ -15,6 +15,7 @@ class BinDeserializer(kobold.BinaryDeserializer):
         opts = kobold.DeserializerOptions()
         opts.flags = 1
         opts.shallow = False
+        opts.skip_unknown_types = True
 
         types = kobold.TypeList(types_path.read_text())
 
