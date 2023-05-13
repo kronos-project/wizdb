@@ -84,6 +84,17 @@ class SpeedStat(Stat):
         return cls(obj["m_speedMultiplier"])
 
 
+class MultiPassengerStat(Stat):
+    def __init__(self, count: int):
+        super().__init__(6)
+
+        self.count = count
+
+    @classmethod
+    def extract(cls, obj: dict):
+        return cls(obj["m_numSeats"])
+
+
 class StatRules:
     def __init__(self, de: kobold.BinaryDeserializer, canonical: Path, rule_dir: Path):
         self.tables = {}

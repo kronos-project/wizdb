@@ -115,6 +115,7 @@ def convert_stat(stat):
         case 3: return 3, stat.spell, stat.count
         case 4: return 4, stat.spell, stat.desc_key.id
         case 5: return 5, stat.multiplier, 0
+        case 6: return 6, stat.count, 0
 
         case _: raise RuntimeError()
 
