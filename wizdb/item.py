@@ -63,7 +63,7 @@ class Item:
         self.max_tcs = 0
         self.archmastery_points = 0.
 
-        for behavior in obj["m_behaviors"]:
+        for behavior in filter(lambda b: b is not None, obj["m_behaviors"]):
             name = behavior["m_behaviorName"]
 
             if name == b"JewelSocketBehavior":
