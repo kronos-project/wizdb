@@ -30,6 +30,7 @@ def read_item_template(de: kobold.BinaryDeserializer, file: Path) -> dict:
 
     return obj
 
+
 def read_mob_template(de: kobold.BinaryDeserializer, file: Path) -> dict:
     try:
         obj = de.deserialize(file.read_bytes())
@@ -55,8 +56,6 @@ def deserialize_files(state: State):
             mobs.append(mob)
 
     return items, mobs
-
-
 
 
 def main():

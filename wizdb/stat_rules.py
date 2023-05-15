@@ -111,9 +111,8 @@ class StatRules:
                 table = template["m_statTableName"].decode()
                 flat = "Flat" in name
 
-                if table == '':
+                if not table:
                     value = 1.0
-
                 else:
                     table = self.tables[table]
                     value = table["m_statVector"][idx]

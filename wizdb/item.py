@@ -2,7 +2,7 @@ from .jewels import JewelSockets
 from .requirements import parse_equip_reqs
 from .state import State
 from .stat_rules import MultiPassengerStat
-from .utils import convert_rarity, SCHOOLS
+from .utils import convert_rarity, get_school_index
 
 ITEM_ADJECTIVES = (b"Hat", b"Robe", b"Shoes", b"Weapon", b"Athame", b"Amulet", b"Ring", b"Deck", b"Jewel", b"Mount")
 META_ADJECTIVES = (
@@ -66,10 +66,7 @@ class Item:
 
         self.stats = []
 
-        for behavior in obj["m_behaviors"]:
-            if behavior == None:
-                continue
-            
+        for behavior in filter(lambda b: b is not None, obj["m_behaviors"]):
             name = behavior["m_behaviorName"]
 
             if name == b"JewelSocketBehavior":
@@ -84,14 +81,12 @@ class Item:
                 self.max_spells = behavior["m_maxSpells"]
                 self.max_copies = behavior["m_genericMaxInstances"]
                 self.max_school_copies = behavior["m_schoolMaxInstances"]
-                self.deck_school = SCHOOLS.index(behavior["m_primarySchoolName"].replace(b"None", b"").replace(b"All", b"").replace(b"Generic", b""))
+                self.deck_school = get_school_index(behavior["m_primarySchoolName"])
                 self.max_tcs = behavior["m_maxTreasureCards"]
                 self.archmastery_points = behavior["m_maxArchmasteryPoints"]
 
             elif name == b"MountItemBehavior":
                 self.stats.append(MultiPassengerStat.extract(behavior))
-
-
 
         for effect in obj["m_equipEffects"]:
             if stat := state.translate_stat(effect):

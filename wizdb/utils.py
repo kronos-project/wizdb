@@ -1,6 +1,8 @@
+from struct import pack
+from typing import List
+
 SCHOOLS = [
     b"",
-    b"All",
     b"Fire",
     b"Ice",
     b"Storm",
@@ -18,7 +20,6 @@ SCHOOLS = [
     b"CastleMagic",
     b"WhirlyBurly",
 ]
-
 
 SPELL_TYPES = [
     b"",
@@ -41,6 +42,16 @@ SPELL_TYPES = [
     b"Shadow_Creature",
     b"Shadow_Self",
 ]
+
+
+def pack_int_blob(data: List[int]) -> bytes:
+    data_len = len(data)
+    return pack(f"<B{data_len}i", data_len, *data)
+
+
+def get_school_index(name: bytes) -> int:
+    return SCHOOLS.index(name.replace(b"None", b"").replace(b"All", b"").replace(b"Generic", b""))
+
 
 def convert_rarity(obj: dict) -> int:
     rarity = obj.get("m_rarity", "r::RT_UNKNOWN").split("::")[1]

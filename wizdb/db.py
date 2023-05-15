@@ -1,9 +1,9 @@
 import sqlite3
-from sqlite3 import Cursor
 
 from .lang_files import LangCache
 from .set_bonus import SetBonusCache
 from .spell import SpellCache
+from .utils import pack_int_blob
 
 INIT_QUERIES = """CREATE TABLE locale_en (
     id   integer not null primary key,
@@ -113,36 +113,10 @@ CREATE TABLE effects (
     id       integer not null primary key,
     spell    integer not null,
     kind     integer not null,
-    a        integer,
-    b        integer,
-    c        integer,
-    d        integer,
-    e        integer,
-    f        integer,
-    g        integer,
-    h        integer,
-    i        integer,
-    j        integer,
-    k        integer,
-    l        integer,
-    m        integer,
-    n        integer,
-    o        integer,
-    p        integer,
-    q        integer,
-    r        integer,
-    s        integer,
-    t        integer,
-    u        integer,
-    v        integer,
-    w        integer,
-    x        integer,
-    y        integer,
-    z        integer,
+    list     blob not null,
 
     foreign key(spell) references spells(id)
 );
-
 
 CREATE TABLE mobs (
     id                  integer not null primary key,
@@ -197,10 +171,6 @@ def convert_equip_reqs(reqs):
     return school, level
 
 
-def _progress(_status, remaining, total):
-    print(f'Copied {total-remaining} of {total} pages...')
-
-
 def build_db(state, items, mobs, out):
     mem = sqlite3.connect(":memory:")
     cursor = mem.cursor()
@@ -214,27 +184,25 @@ def build_db(state, items, mobs, out):
     mem.commit()
 
     with out:
-        mem.backup(out, pages=1, progress=_progress)
+        mem.backup(out, pages=1)
 
     mem.close()
 
 
-def initialize(cursor):
+def initialize(cursor: sqlite3.Cursor):
     cursor.executescript(INIT_QUERIES)
 
 
-def insert_locale_data(cursor, cache: LangCache):
+def insert_locale_data(cursor: sqlite3.Cursor, cache: LangCache):
     cursor.executemany(
         "INSERT INTO locale_en(id, data) VALUES (?, ?)",
         cache.lookup.items()
     )
 
 
-def insert_spell_data(cursor: Cursor, cache: SpellCache):
+def insert_spell_data(cursor: sqlite3.Cursor, cache: SpellCache):
     spells = []
     effects = []
-    damages = []
-    rounds = []
     for template, spell in cache.cache.items():
         spells.append((
             template,
@@ -257,26 +225,9 @@ def insert_spell_data(cursor: Cursor, cache: SpellCache):
             spell.balance_pips,
         ))
 
-        effect_params = spell.effect_params
-        damage_types = spell.damage_types
-        num_rounds = spell.num_rounds
-        if not damage_types:
-            damage_types = [0] * 33
-        if not effect_params:
-            effect_params = [0] * 33
-        if not num_rounds:
-            num_rounds = [0] * 33
-
-        effect_params.insert(0, template)
-        effect_params.insert(1, 1)
-        damage_types.insert(0, template)
-        damage_types.insert(1, 2)
-        num_rounds.insert(0, template)
-        num_rounds.insert(1, 3)
-
-        effects.append(tuple(effect_params))
-        damages.append(tuple(damage_types))
-        rounds.append(tuple(num_rounds))
+        effects.append((template, 1, pack_int_blob(spell.effect_params)))
+        effects.append((template, 2, pack_int_blob(spell.damage_types)))
+        effects.append((template, 3, pack_int_blob(spell.num_rounds)))
 
     cursor.executemany(
         "INSERT INTO spells(template_id,name,real_name,image,accuracy,school,description,form,rank,x_pips,shadow_pips,fire_pips,ice_pips,storm_pips,myth_pips,life_pips,death_pips,balance_pips) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
@@ -284,26 +235,12 @@ def insert_spell_data(cursor: Cursor, cache: SpellCache):
     )
 
     cursor.executemany(
-        """INSERT INTO effects (spell, kind, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+        "INSERT INTO effects(spell,kind,list) VALUES(?,?,?)",
         effects
     )
 
-    cursor.executemany(
-        """INSERT INTO effects (spell, kind, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-        damages
-    )
 
-    cursor.executemany(
-        """INSERT INTO effects (spell, kind, a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-        rounds
-    )
-    
-
-
-def insert_set_bonuses(cursor, cache: SetBonusCache):
+def insert_set_bonuses(cursor: sqlite3.Cursor, cache: SetBonusCache):
     set_bonuses = []
     set_stats = []
 
@@ -314,16 +251,16 @@ def insert_set_bonuses(cursor, cache: SetBonusCache):
                 set_stats.append((template, bonus.activate_count, *convert_stat(stat)))
 
     cursor.executemany(
-        "INSERT INTO set_bonuses (id,name) VALUES (?,?)",
+        "INSERT INTO set_bonuses(id,name) VALUES(?,?)",
         set_bonuses
     )
     cursor.executemany(
-        """INSERT INTO set_stats (bonus_set,activate_count,kind,a,b) VALUES (?,?,?,?,?)""",
+        """INSERT INTO set_stats(bonus_set,activate_count,kind,a,b) VALUES(?,?,?,?,?)""",
         set_stats
     )
 
 
-def insert_items(cursor, items):
+def insert_items(cursor: sqlite3.Cursor, items):
     values = []
     talents = []
     stats = []
@@ -364,7 +301,7 @@ def insert_items(cursor, items):
     )
     cursor.executemany("INSERT INTO pet_talents (item,name) VALUES (?,?)", talents)
 
-def insert_mobs(cursor, mobs):
+def insert_mobs(cursor: sqlite3.Cursor, mobs):
     values = []
     stats = []
 
@@ -375,12 +312,12 @@ def insert_mobs(cursor, mobs):
             mob.is_boss,
             mob.rank,
             mob.hitpoints,
-            mob.primarySchool,
-            mob.secondarySchool,
+            mob.primary_school,
+            mob.secondary_school,
             mob.is_shadow,
             mob.intelligence,
-            mob.selfishFactor,
-            mob.aggressiveFactor
+            mob.selfish_factor,
+            mob.aggressive_factor,
         ))
 
         for stat in mob.stats:
